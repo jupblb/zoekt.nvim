@@ -3,6 +3,7 @@ local M = {}
 -- Default configuration
 local defaults = {
   index_path = vim.env.ZOEKT_INDEX_PATH or '~/.zoekt',
+  auto_open_quickfix = true,  -- Automatically open quickfix window after search
   -- Future options:
   -- auto_index = false,
   -- search_options = {},

@@ -60,14 +60,47 @@ function M.populate_quickfix(results)
     return
   end
 
-  -- Set quickfix list
-  vim.fn.setqflist(results, 'r')
+  -- Schedule quickfix operations to avoid conflicts with other plugins
+  vim.schedule(function()
+    -- Ensure all items have required fields for plugin compatibility
+    local items = {}
+    for _, result in ipairs(results) do
+      table.insert(items, {
+        filename = result.filename or '',
+        lnum = result.lnum or 1,
+        col = result.col or 1,
+        text = result.text or '',
+        type = result.type or '',  -- Use empty string instead of nil
+        nr = result.nr or 0,
+      })
+    end
 
-  -- Open quickfix window
-  vim.cmd('copen')
+    -- Set quickfix list using simple format first, then add title
+    vim.fn.setqflist(items, 'r')
+    vim.fn.setqflist({}, 'a', { title = 'Zoekt Search Results' })
 
-  -- Jump to first result
-  vim.cmd('cfirst')
+    -- Check if we should auto-open the quickfix window
+    local auto_open = config.get_option('auto_open_quickfix')
+    if auto_open then
+      -- Open quickfix window at the bottom spanning full width
+      local ok, err = pcall(function()
+        vim.cmd('botright copen')
+        -- Explicitly focus the quickfix window
+        local qf_winnr = vim.fn.getqflist({ winid = 0 }).winid
+        if qf_winnr and qf_winnr ~= 0 then
+          vim.api.nvim_set_current_win(qf_winnr)
+        end
+      end)
+      if not ok then
+        -- If copen fails, still try to notify about results
+        utils.notify('Results added to quickfix list. Error opening window: ' .. tostring(err), vim.log.levels.WARN)
+        return
+      end
+    else
+      -- Just notify that results are available
+      utils.notify('Results added to quickfix list. Use :copen to view.', vim.log.levels.INFO)
+    end
+  end)
 end
 
 -- Handle the ZoektSearch command
