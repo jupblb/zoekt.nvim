@@ -3,7 +3,11 @@ local M = {}
 -- Default configuration
 local defaults = {
   index_path = vim.env.ZOEKT_INDEX_PATH or '~/.zoekt',
-  auto_open_quickfix = true,  -- Automatically open quickfix window after search
+  auto_open_quickfix = true, -- Automatically open quickfix window after search
+  use_telescope = false, -- Use telescope.nvim for search results (if available)
+  telescope = {
+    live_search = false, -- Enable live search mode in telescope
+  },
   -- Future options:
   -- auto_index = false,
   -- search_options = {},

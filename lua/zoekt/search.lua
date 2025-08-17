@@ -2,6 +2,9 @@ local M = {}
 local utils = require('zoekt.utils')
 local config = require('zoekt.config')
 
+-- Check if telescope is available
+local has_telescope = pcall(require, 'telescope')
+
 -- Execute a search query
 function M.execute_search(query)
   if not utils.executable_exists('zoekt') then
@@ -70,7 +73,7 @@ function M.populate_quickfix(results)
         lnum = result.lnum or 1,
         col = result.col or 1,
         text = result.text or '',
-        type = result.type or '',  -- Use empty string instead of nil
+        type = result.type or '', -- Use empty string instead of nil
         nr = result.nr or 0,
       })
     end
@@ -93,32 +96,75 @@ function M.populate_quickfix(results)
       end)
       if not ok then
         -- If copen fails, still try to notify about results
-        utils.notify('Results added to quickfix list. Error opening window: ' .. tostring(err), vim.log.levels.WARN)
+        utils.notify(
+          'Results added to quickfix list. Error opening window: '
+            .. tostring(err),
+          vim.log.levels.WARN
+        )
         return
       end
     else
       -- Just notify that results are available
-      utils.notify('Results added to quickfix list. Use :copen to view.', vim.log.levels.INFO)
+      utils.notify(
+        'Results added to quickfix list. Use :copen to view.',
+        vim.log.levels.INFO
+      )
     end
   end)
 end
 
 -- Handle the ZoektSearch command
 function M.handle_search_command(args)
-  if not args or args == '' then
-    utils.notify('Usage: :ZoektSearch query', vim.log.levels.ERROR)
-    return
+  -- Check if we should use telescope
+  local use_telescope = config.get_option('use_telescope')
+  local live_search = config.get_option('telescope')
+    and config.get_option('telescope').live_search
+
+  -- If telescope is requested but not available, fallback to quickfix
+  if use_telescope and not has_telescope then
+    utils.notify(
+      'Telescope not available, falling back to quickfix',
+      vim.log.levels.WARN
+    )
+    use_telescope = false
   end
 
-  -- Parse arguments to get the query
-  local query = utils.parse_search_args(args)
+  if use_telescope then
+    -- Use telescope for search
+    if live_search then
+      -- Live search mode - interactive search as you type
+      require('telescope').extensions.zoekt.live_search()
+    else
+      -- Static search mode - search with provided query
+      if not args or args == '' then
+        -- If no args, telescope will prompt for input
+        require('telescope').extensions.zoekt.search()
+      else
+        local query = utils.parse_search_args(args)
+        if query and query ~= '' then
+          require('telescope').extensions.zoekt.search({ query = query })
+        else
+          utils.notify('Search query cannot be empty', vim.log.levels.ERROR)
+        end
+      end
+    end
+  else
+    -- Use traditional quickfix
+    if not args or args == '' then
+      utils.notify('Usage: :ZoektSearch query', vim.log.levels.ERROR)
+      return
+    end
 
-  if not query or query == '' then
-    utils.notify('Search query cannot be empty', vim.log.levels.ERROR)
-    return
+    -- Parse arguments to get the query
+    local query = utils.parse_search_args(args)
+
+    if not query or query == '' then
+      utils.notify('Search query cannot be empty', vim.log.levels.ERROR)
+      return
+    end
+
+    M.execute_search(query)
   end
-
-  M.execute_search(query)
 end
 
 return M

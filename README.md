@@ -11,6 +11,9 @@ editor workflow.
   directories
 - **Quickfix integration**: Search results displayed in Neovim's quickfix list
   for easy navigation
+- **Telescope integration**: Optional integration with telescope.nvim for
+  interactive search and result navigation
+- **Live search**: Real-time search results as you type (with telescope)
 - **Configurable**: Flexible index path configuration with environment variable
   support
 
@@ -20,6 +23,7 @@ editor workflow.
 - [Zoekt] installed (`zoekt-index`, `zoekt-git-index`, and `zoekt` binaries in
   PATH)
 - [plenary.nvim] (optional, for enhanced functionality)
+- [telescope.nvim] (optional, for telescope integration)
 
 ## Installation
 
@@ -30,11 +34,16 @@ editor workflow.
   "jupblb/zoekt.nvim",
   dependencies = {
     "nvim-lua/plenary.nvim", -- Optional but recommended
+    "nvim-telescope/telescope.nvim", -- Optional, for telescope integration
   },
   config = function()
     require("zoekt").setup({
       -- Configuration options
       index_path = vim.env.ZOEKT_INDEX_PATH or "~/.zoekt",
+      use_telescope = false, -- Enable telescope integration
+      telescope = {
+        live_search = false, -- Enable live search mode
+      },
     })
   end,
 }
@@ -64,7 +73,17 @@ require("zoekt").setup({
   -- Can be overridden by ZOEKT_INDEX_PATH environment variable
   index_path = "~/.zoekt",
 
-  -- Additional configuration options can be added here
+  -- Automatically open quickfix window after search
+  auto_open_quickfix = true,
+
+  -- Use telescope.nvim for search results (if available)
+  use_telescope = false,
+
+  -- Telescope-specific options
+  telescope = {
+    -- Enable live search mode (search as you type)
+    live_search = false,
+  },
 })
 ```
 
@@ -89,14 +108,13 @@ Examples:
 :ZoektIndex ~/my-indices/work  " Index to custom location
 ```
 
-#### `:ZoektSearch [index=<path>] <query>`
+#### `:ZoektSearch [query]`
 
 Search the indexed codebase using Zoekt query syntax.
 
-- Results are populated in the quickfix list
-- Press `<Enter>` on a result to jump to the file and location
-- Optional `index=<path>`: Use a specific index (defaults to configured
-  `index_path`)
+- When `use_telescope` is `false`: Results are populated in the quickfix list
+- When `use_telescope` is `true`: Opens telescope picker with search results
+- Without arguments and telescope enabled: Opens prompt for query input
 
 Examples:
 
@@ -105,6 +123,37 @@ Examples:
 :ZoektSearch TODO                      " Search for TODOs
 :ZoektSearch "exact phrase"            " Search for exact phrase
 :ZoektSearch file:\.lua$ setup         " Search only in Lua files
+:ZoektSearch                           " Open prompt (telescope only)
+```
+
+#### `:ZoektTelescope [query]`
+
+Search using telescope picker (telescope.nvim required).
+
+- Opens telescope picker with search results
+- Without arguments: Opens prompt for query input
+- Press `<Enter>` to jump to result
+- Press `<C-q>` to send results to quickfix
+
+Examples:
+
+``` vim
+:ZoektTelescope function setup         " Search with telescope
+:ZoektTelescope                        " Open telescope prompt
+```
+
+#### `:ZoektLive`
+
+Live search mode with telescope (telescope.nvim required).
+
+- Search results update as you type
+- Press `<Enter>` to jump to result
+- Press `<C-q>` to send results to quickfix
+
+Example:
+
+``` vim
+:ZoektLive                             " Start live search
 ```
 
 ### Zoekt Query Syntax
@@ -158,6 +207,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
   [Zoekt]: https://github.com/sourcegraph/zoekt
   [plenary.nvim]: https://github.com/nvim-lua/plenary.nvim
+  [telescope.nvim]: https://github.com/nvim-telescope/telescope.nvim
   [lazy.nvim]: https://github.com/folke/lazy.nvim
   [packer.nvim]: https://github.com/wbthomason/packer.nvim
   [Zoekt documentation]: https://github.com/sourcegraph/zoekt#query-language

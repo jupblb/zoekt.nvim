@@ -23,9 +23,36 @@ function M.setup(opts)
   vim.api.nvim_create_user_command('ZoektSearch', function(cmd_opts)
     search.handle_search_command(cmd_opts.args)
   end, {
-    nargs = '+',
+    nargs = '*', -- Changed from '+' to '*' to allow no args when using telescope
     desc = 'Search indexed code with Zoekt',
   })
+
+  -- Register telescope extension if telescope is available
+  local has_telescope = pcall(require, 'telescope')
+  if has_telescope then
+    -- Load the telescope extension
+    pcall(function()
+      require('telescope').load_extension('zoekt')
+    end)
+
+    -- Additional telescope-specific commands
+    vim.api.nvim_create_user_command('ZoektTelescope', function(cmd_opts)
+      if cmd_opts.args and cmd_opts.args ~= '' then
+        require('telescope').extensions.zoekt.search({ query = cmd_opts.args })
+      else
+        require('telescope').extensions.zoekt.search()
+      end
+    end, {
+      nargs = '*',
+      desc = 'Search with Zoekt using Telescope',
+    })
+
+    vim.api.nvim_create_user_command('ZoektLive', function()
+      require('telescope').extensions.zoekt.live_search()
+    end, {
+      desc = 'Live search with Zoekt using Telescope',
+    })
+  end
 end
 
 return M
