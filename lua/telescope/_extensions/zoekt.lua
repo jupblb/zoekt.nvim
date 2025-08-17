@@ -17,6 +17,98 @@ local zoekt_utils = require('zoekt.utils')
 
 local M = {}
 
+-- Create a custom previewer that highlights the matched line
+local function create_zoekt_previewer(opts)
+  return previewers.new_buffer_previewer({
+    title = 'Zoekt Preview',
+
+    get_buffer_by_name = function(_, entry)
+      return entry.filename
+    end,
+
+    define_preview = function(self, entry, status)
+      if not entry or not entry.filename then
+        return
+      end
+
+      -- Check if file exists
+      local filepath = vim.fn.expand(entry.filename)
+      if not vim.fn.filereadable(filepath) then
+        vim.api.nvim_buf_set_lines(
+          self.state.bufnr,
+          0,
+          -1,
+          false,
+          { 'File not found: ' .. filepath }
+        )
+        return
+      end
+
+      -- Load file contents
+      conf.buffer_previewer_maker(filepath, self.state.bufnr, {
+        bufname = self.state.bufname,
+        winid = self.state.winid,
+        preview = {
+          highlight_line = true,
+        },
+        callback = function(bufnr)
+          -- Set the filetype for syntax highlighting
+          local ft = vim.filetype.match({ filename = filepath })
+          if ft then
+            vim.api.nvim_buf_set_option(bufnr, 'filetype', ft)
+          end
+
+          -- Schedule highlight after buffer is loaded and displayed
+          vim.schedule(function()
+            -- Clear any existing highlights
+            vim.api.nvim_buf_clear_namespace(bufnr, -1, 0, -1)
+
+            -- Highlight the matched line if we have a line number
+            local lnum = entry.actual_lnum or entry.lnum
+            if lnum and lnum > 0 then
+              -- Create a namespace for our highlights
+              local ns = vim.api.nvim_create_namespace('zoekt_preview')
+
+              -- Add highlight to the entire line
+              vim.api.nvim_buf_add_highlight(
+                bufnr,
+                ns,
+                'TelescopePreviewLine',
+                lnum - 1,
+                0,
+                -1
+              )
+
+              -- Also add a sign to make it more visible
+              vim.fn.sign_define('ZoektMatch', {
+                text = '▶',
+                texthl = 'TelescopePreviewMatch',
+                linehl = 'TelescopePreviewLine',
+              })
+
+              vim.fn.sign_place(
+                0,
+                'ZoektMatches',
+                'ZoektMatch',
+                bufnr,
+                { lnum = lnum, priority = 100 }
+              )
+
+              -- Try to center the view on the matched line
+              pcall(function()
+                vim.api.nvim_win_set_cursor(self.state.winid, { lnum, 0 })
+                vim.api.nvim_win_call(self.state.winid, function()
+                  vim.cmd('normal! zz')
+                end)
+              end)
+            end
+          end)
+        end,
+      })
+    end,
+  })
+end
+
 -- Entry maker for zoekt results
 local function make_entry(result)
   local displayer = entry_display.create({
@@ -179,7 +271,7 @@ local function zoekt_search(opts)
 
         return base_sorter
       end)(),
-      previewer = conf.file_previewer(opts),
+      previewer = create_zoekt_previewer(opts),
       attach_mappings = function(prompt_bufnr, map)
         actions.select_default:replace(function()
           actions.close(prompt_bufnr)
