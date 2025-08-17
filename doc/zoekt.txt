@@ -22,6 +22,7 @@ Features:
 - Fast code search across indexed codebases
 - Quickfix list integration for search results
 - Support for custom index paths
+- Auto-indexing via git hooks
 
 ==============================================================================
 REQUIREMENTS                                              *zoekt-requirements*
@@ -72,7 +73,10 @@ Options:
 
 index_path                                              *zoekt-config-index_path*
     Type: `string`
-    Default: `"~/.zoekt"` or value of `ZOEKT_INDEX_PATH` environment variable
+    Default: Determined in order of priority:
+      1. `ZOEKT_INDEX_PATH` environment variable (if set)
+      2. `.zoekt` directory in git repository root (if in a git repo)
+      3. `~/.zoekt` (fallback)
 
     The directory where Zoekt stores its search indices.
 
@@ -108,6 +112,22 @@ COMMANDS                                                      *zoekt-commands*
       :ZoektSearch "exact phrase match"
 <
 
+:ZoektHook                                                        *:ZoektHook*
+    Install a git post-commit hook that automatically indexes the repository
+    after each commit.
+
+    The hook will:
+    - Automatically run `zoekt-git-index` after each commit
+    - Use the configured index path from the plugin settings
+    - Run indexing in the background to avoid blocking git operations
+
+    Must be run from within a git repository.
+    Overwrites any existing post-commit hook.
+
+    Example: >
+      :ZoektHook
+<
+
 ==============================================================================
 USAGE                                                            *zoekt-usage*
 
@@ -117,11 +137,15 @@ Basic Workflow ~
    :ZoektIndex
 <
 
-2. Search for code: >
+2. (Optional) Install auto-indexing hook: >
+   :ZoektHook
+<
+
+3. Search for code: >
    :ZoektSearch function myFunction
 <
 
-3. Navigate results using quickfix commands:
+4. Navigate results using quickfix commands:
    - `:cnext` - Go to next result
    - `:cprev` - Go to previous result
    - `:copen` - Open quickfix window
