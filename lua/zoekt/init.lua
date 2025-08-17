@@ -9,6 +9,7 @@ function M.setup(opts)
   -- Register user commands
   local index = require('zoekt.index')
   local search = require('zoekt.search')
+  local hook = require('zoekt.hook')
 
   -- ZoektIndex command
   vim.api.nvim_create_user_command('ZoektIndex', function(cmd_opts)
@@ -25,6 +26,13 @@ function M.setup(opts)
   end, {
     nargs = '*', -- Changed from '+' to '*' to allow no args when using telescope
     desc = 'Search indexed code with Zoekt',
+  })
+
+  -- ZoektHook command
+  vim.api.nvim_create_user_command('ZoektHook', function()
+    hook.install_hook()
+  end, {
+    desc = 'Install a git post-commit hook to automatically index with Zoekt',
   })
 
   -- Register telescope extension if telescope is available
