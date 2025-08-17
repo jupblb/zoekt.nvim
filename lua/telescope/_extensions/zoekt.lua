@@ -132,7 +132,10 @@ local function zoekt_search(opts)
             _original_line = line, -- Store original line for unique ordinal
           }
 
-          return make_entry(result)
+          local entry = make_entry(result)
+          -- Debug: Log each entry's ordinal to see if they're unique
+          vim.notify('Entry ordinal: ' .. entry.ordinal, vim.log.levels.INFO)
+          return entry
         end,
       }),
       sorter = conf.generic_sorter(opts),
