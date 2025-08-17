@@ -65,48 +65,61 @@ local function zoekt_search(opts)
   pickers
     .new(opts, {
       prompt_title = 'Zoekt Search',
-      finder = finders.new_async_job({
-        command_generator = function(prompt)
-          if not prompt or prompt == '' then
-            return nil
-          end
-
-          return {
-            'zoekt',
-            '-index_dir',
-            index_path,
-            '-format',
-            'json', -- Request JSON output for easier parsing
-            prompt,
-          }
-        end,
-        entry_maker = function(line)
-          -- Parse JSON output from zoekt if available
-          -- Fallback to text parsing if JSON is not supported
-          local ok, json = pcall(vim.json.decode, line)
-          if ok and json then
-            return make_entry({
-              filename = json.file or json.filename,
-              lnum = json.line or json.lnum or 1,
-              col = json.column or json.col or 1,
-              text = json.text or json.match or line,
-            })
-          else
-            -- Fallback to parsing text output
-            -- Expected format: filename:line:column:text
-            local parts = vim.split(line, ':', { plain = true })
-            if #parts >= 3 then
-              return make_entry({
-                filename = parts[1],
-                lnum = tonumber(parts[2]) or 1,
-                col = tonumber(parts[3]) or 1,
-                text = table.concat(vim.list_slice(parts, 4), ':'),
-              })
-            end
-          end
+      finder = finders.new_job(function(prompt)
+        if not prompt or prompt == '' then
           return nil
-        end,
-      }),
+        end
+
+        local cmd = {
+          'zoekt',
+          '-index_dir',
+          index_path,
+          prompt,
+        }
+        -- Debug: Print the command being executed
+        -- vim.notify('Zoekt cmd: ' .. vim.inspect(cmd), vim.log.levels.DEBUG)
+        return cmd
+      end, function(line)
+        -- Skip empty lines
+        if not line or line == '' then
+          return nil
+        end
+
+        -- Parse zoekt output format: filename:line:text
+        local colon1 = line:find(':')
+        if not colon1 then
+          return nil
+        end
+
+        local filename = line:sub(1, colon1 - 1)
+        local rest = line:sub(colon1 + 1)
+
+        local colon2 = rest:find(':')
+        if not colon2 then
+          return nil
+        end
+
+        local lnum = tonumber(rest:sub(1, colon2 - 1))
+        if not lnum then
+          return nil
+        end
+
+        local text = rest:sub(colon2 + 1)
+
+        -- Try to determine column by finding first non-whitespace
+        local col = 1
+        if text and text ~= '' then
+          local _, col_end = string.find(text, '^%s*')
+          col = (col_end or 0) + 1
+        end
+
+        return make_entry({
+          filename = filename,
+          lnum = lnum,
+          col = col,
+          text = text or '',
+        })
+      end, opts.max_results, opts.cwd),
       sorter = conf.generic_sorter(opts),
       previewer = conf.file_previewer(opts),
       attach_mappings = function(prompt_bufnr, map)
