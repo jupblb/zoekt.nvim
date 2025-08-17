@@ -152,7 +152,24 @@ local function zoekt_search(opts)
         end,
         entry_maker = make_entry,
       }),
-      sorter = conf.generic_sorter(opts),
+      sorter = (function()
+        local base_sorter = conf.generic_sorter(opts)
+        local original_score = base_sorter.score
+
+        -- Wrap the sorter to handle file searches
+        base_sorter.score = function(self, prompt, entry, cb_add, cb_filter)
+          -- For file searches (when zoekt returns line number 0),
+          -- pass empty prompt to sorter to show all results unfiltered
+          local sorter_prompt = prompt
+          if entry and entry.is_file_search then
+            sorter_prompt = ''
+          end
+
+          return original_score(self, sorter_prompt, entry, cb_add, cb_filter)
+        end
+
+        return base_sorter
+      end)(),
       previewer = conf.file_previewer(opts),
       attach_mappings = function(prompt_bufnr, map)
         actions.select_default:replace(function()

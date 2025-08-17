@@ -15,6 +15,7 @@
           ];
 
           NVIM_LAZYDEV = "${pkgs.vimPlugins.lazydev-nvim}";
+          NVIM_TELESCOPE = "${pkgs.vimPlugins.telescope-nvim}";
         };
       }
     );
