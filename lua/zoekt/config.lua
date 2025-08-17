@@ -1,13 +1,5 @@
 local M = {}
-
--- Helper function to get git root directory
-local function get_git_root()
-  local git_dir = vim.fn.finddir('.git', '.;')
-  if git_dir ~= '' then
-    return vim.fn.fnamemodify(git_dir, ':h')
-  end
-  return nil
-end
+local utils = require('zoekt.utils')
 
 -- Function to determine default index path
 local function get_default_index_path()
@@ -17,7 +9,7 @@ local function get_default_index_path()
   end
 
   -- Priority 2: Git project root
-  local git_root = get_git_root()
+  local git_root = utils.get_git_root()
   if git_root then
     return git_root .. '/.zoekt'
   end
@@ -31,10 +23,6 @@ local defaults = {
   index_path = get_default_index_path(),
   auto_open_quickfix = true, -- Automatically open quickfix window after search
   use_telescope = true, -- Use telescope.nvim for search results (if available, default: true)
-  -- Future options:
-  -- auto_index = false,
-  -- search_options = {},
-  -- keymaps = {},
 }
 
 -- Current configuration

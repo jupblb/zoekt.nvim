@@ -1,21 +1,6 @@
 local M = {}
 local config = require('zoekt.config')
-
--- Check if current directory is inside a git repository
-local function is_git_repo()
-  local git_dir = vim.fn.finddir('.git', '.;')
-  return git_dir ~= ''
-end
-
--- Get the git repository root directory
-local function get_git_root()
-  local git_dir = vim.fn.finddir('.git', '.;')
-  if git_dir == '' then
-    return nil
-  end
-  -- Get the parent directory of .git
-  return vim.fn.fnamemodify(git_dir, ':h')
-end
+local utils = require('zoekt.utils')
 
 -- Create the post-commit hook content
 local function create_hook_content()
@@ -48,7 +33,7 @@ end
 -- Install the git hook
 function M.install_hook()
   -- Check if we're in a git repository
-  if not is_git_repo() then
+  if not utils.is_git_repository() then
     vim.notify(
       'Not in a git repository',
       vim.log.levels.ERROR,
@@ -57,7 +42,7 @@ function M.install_hook()
     return false
   end
 
-  local git_root = get_git_root()
+  local git_root = utils.get_git_root()
   if not git_root then
     vim.notify(
       'Could not find git repository root',
