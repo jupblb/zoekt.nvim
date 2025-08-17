@@ -29,6 +29,18 @@ function M.execute_search(query)
     return
   end
 
+  -- Check if any index files exist (*.zoekt files)
+  local index_files = vim.fn.glob(index_path .. '/*.zoekt', false, true)
+  if not index_files or #index_files == 0 then
+    utils.notify(
+      'No index files found in '
+        .. index_path
+        .. '\nRun :ZoektIndex to generate the index first',
+      vim.log.levels.WARN
+    )
+    -- Continue with the search anyway, but user has been warned
+  end
+
   local cmd = 'zoekt'
   local args = { '-index_dir', index_path, query }
 
