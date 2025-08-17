@@ -9,6 +9,8 @@ editor workflow.
   capabilities within Neovim
 - **Automatic indexing**: Smart detection of git repositories vs regular
   directories
+- **Git hook integration**: Install post-commit hooks to automatically keep your
+  index up-to-date
 - **Quickfix integration**: Search results displayed in Neovim's quickfix list
   for easy navigation
 - **Telescope integration**: Optional integration with telescope.nvim for
@@ -125,6 +127,26 @@ Example:
 :ZoektTelescope                        " Start live search
 ```
 
+#### `:ZoektHook`
+
+Install a git post-commit hook that automatically updates the Zoekt index after
+each commit.
+
+- Only works in git repositories
+- Automatically overwrites any existing post-commit hook
+- The hook runs `zoekt-index` after each commit
+- Hook is standalone and doesn't require Neovim to run
+
+Example:
+
+``` vim
+:ZoektHook                             " Install post-commit hook
+```
+
+**Recommendation**: When working in a git repository, it's recommended to
+install this hook to keep your Zoekt index automatically up-to-date with your
+commits.
+
 ### Zoekt Query Syntax
 
 Zoekt supports advanced search syntax:
@@ -158,10 +180,12 @@ nvim --headless -c "PlenaryBustedFile tests/zoekt_spec.lua"
     │       ├── init.lua        # Main plugin module
     │       ├── index.lua       # Indexing functionality
     │       ├── search.lua      # Search functionality
-    │       └── config.lua      # Configuration handling
+    │       ├── config.lua      # Configuration handling
+    │       └── hook.lua        # Git hook management
     ├── tests/
     │   ├── minimal_init.lua    # Minimal config for testing
-    │   └── zoekt_spec.lua      # Test specifications
+    │   ├── zoekt_spec.lua      # Test specifications
+    │   └── zoekt_hook_spec.lua # Hook functionality tests
     ├── README.md
     ├── AGENT.md                # AI agent instructions
     └── PLAN.md                 # Implementation plan
