@@ -36,6 +36,10 @@ local function make_entry(result)
     })
   end
 
+  -- Use original line for ordinal if available to ensure uniqueness
+  local ordinal = result._original_line
+    or (result.filename .. ':' .. tostring(result.lnum) .. ':' .. result.text)
+
   return {
     value = result,
     filename = result.filename,
@@ -43,7 +47,7 @@ local function make_entry(result)
     col = result.col,
     text = result.text,
     display = display,
-    ordinal = result.filename .. ':' .. result.lnum .. ':' .. result.text,
+    ordinal = ordinal,
   }
 end
 
@@ -77,13 +81,16 @@ local function zoekt_search(opts)
           prompt,
         }
         -- Debug: Print the command being executed
-        -- vim.notify('Zoekt cmd: ' .. vim.inspect(cmd), vim.log.levels.DEBUG)
+        -- vim.notify('Zoekt cmd: ' .. vim.inspect(cmd), vim.log.levels.INFO)
         return cmd
       end, function(line)
         -- Skip empty lines
         if not line or line == '' then
           return nil
         end
+
+        -- Debug output (enable to see what lines are being parsed)
+        -- vim.notify('Parsing line: ' .. line, vim.log.levels.INFO)
 
         -- Parse zoekt output format: filename:line:text
         local colon1 = line:find(':')
@@ -99,26 +106,37 @@ local function zoekt_search(opts)
           return nil
         end
 
-        local lnum = tonumber(rest:sub(1, colon2 - 1))
-        if not lnum then
+        local lnum_str = rest:sub(1, colon2 - 1)
+        local lnum = tonumber(lnum_str)
+        if lnum == nil then
           return nil
         end
 
         local text = rest:sub(colon2 + 1)
 
+        -- For file searches (lnum == 0), adjust for display
+        if lnum == 0 then
+          lnum = 1 -- Set to 1 for proper navigation
+          -- text already contains the filename from zoekt
+        end
+
         -- Try to determine column by finding first non-whitespace
         local col = 1
-        if text and text ~= '' then
+        if text and text ~= '' and lnum > 1 then
           local _, col_end = string.find(text, '^%s*')
           col = (col_end or 0) + 1
         end
 
-        return make_entry({
+        -- Create result with the original line as part of ordinal for uniqueness
+        local result = {
           filename = filename,
           lnum = lnum,
           col = col,
           text = text or '',
-        })
+          _original_line = line, -- Store original line for unique ordinal
+        }
+
+        return make_entry(result)
       end, opts.max_results, opts.cwd),
       sorter = conf.generic_sorter(opts),
       previewer = conf.file_previewer(opts),
