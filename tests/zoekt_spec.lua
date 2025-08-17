@@ -175,35 +175,23 @@ describe('zoekt.nvim', function()
   end)
 
   describe('ZoektIndex', function()
-    it('should handle index command with valid path', function()
-      -- Test that a valid path triggers build_index
+    it('should handle index command without arguments', function()
+      -- Test that handle_index_command calls build_index
       local build_index_called = false
       local original_build = index.build_index
 
-      index.build_index = function(path)
+      index.build_index = function()
         build_index_called = true
       end
 
-      -- Mock vim functions
-      local original_isdirectory = vim.fn.isdirectory
-      local original_expand = vim.fn.expand
-      vim.fn.isdirectory = function(path)
-        return 1 -- Valid directory
-      end
-      vim.fn.expand = function(path)
-        return path
-      end
-
-      -- Call the function with a valid path
-      index.handle_index_command('/valid/path')
+      -- Call the function
+      index.handle_index_command()
 
       -- Check that build_index was called
       assert.is_true(build_index_called)
 
       -- Restore original functions
       index.build_index = original_build
-      vim.fn.isdirectory = original_isdirectory
-      vim.fn.expand = original_expand
     end)
 
     it('should check for zoekt-git-index binary for git repos', function()
@@ -227,7 +215,7 @@ describe('zoekt.nvim', function()
         end
       end
 
-      index.build_index('/path/to/repo')
+      index.build_index()
       assert.is_true(notified)
 
       utils.executable_exists = original_executable
@@ -256,7 +244,7 @@ describe('zoekt.nvim', function()
         end
       end
 
-      index.build_index('/path/to/dir')
+      index.build_index()
       assert.is_true(notified)
 
       utils.executable_exists = original_executable

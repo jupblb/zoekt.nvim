@@ -83,18 +83,16 @@ index_path                                              *zoekt-config-index_path
 ==============================================================================
 COMMANDS                                                      *zoekt-commands*
 
-:ZoektIndex [path]                                                *:ZoektIndex*
-    Index a directory or git repository for searching.
-
-    If [path] is provided, indexes the specified directory.
-    If no path is provided, indexes the current working directory.
+:ZoektIndex                                                      *:ZoektIndex*
+    Index the current directory or git repository for searching.
 
     For git repositories, uses `zoekt-git-index` for optimal indexing.
     For regular directories, uses `zoekt-index`.
 
-    Examples: >
+    The index is stored in the configured `index_path`.
+
+    Example: >
       :ZoektIndex
-      :ZoektIndex ~/projects/myproject
 <
 
 :ZoektSearch {query}                                            *:ZoektSearch*
@@ -159,8 +157,8 @@ You can configure different index paths for different projects: >lua
     index_path = "~/projects/.zoekt"
   })
 
-  -- Index a specific project
-  :ZoektIndex ~/projects/backend
+  -- Index the current project
+  :ZoektIndex
 
   -- Search uses the configured index path
   :ZoektSearch handleAuth

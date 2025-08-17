@@ -2,9 +2,9 @@ local M = {}
 local utils = require('zoekt.utils')
 local config = require('zoekt.config')
 
--- Build index for a directory or git repository
-function M.build_index(path)
-  path = path or vim.fn.getcwd()
+-- Build index for the current directory or git repository
+function M.build_index()
+  local path = vim.fn.getcwd()
   local index_path = config.get_option('index_path')
 
   -- Expand paths
@@ -76,19 +76,8 @@ function M.build_index(path)
 end
 
 -- Handle the ZoektIndex command
-function M.handle_index_command(args)
-  local path = nil
-
-  -- Parse command arguments
-  if args and args ~= '' then
-    path = vim.fn.expand(args)
-    if not vim.fn.isdirectory(path) then
-      utils.notify('Invalid directory: ' .. args, vim.log.levels.ERROR)
-      return
-    end
-  end
-
-  M.build_index(path)
+function M.handle_index_command()
+  M.build_index()
 end
 
 return M

@@ -12,12 +12,10 @@ function M.setup(opts)
   local hook = require('zoekt.hook')
 
   -- ZoektIndex command
-  vim.api.nvim_create_user_command('ZoektIndex', function(cmd_opts)
-    index.handle_index_command(cmd_opts.args)
+  vim.api.nvim_create_user_command('ZoektIndex', function()
+    index.handle_index_command()
   end, {
-    nargs = '?',
-    complete = 'dir',
-    desc = 'Index a directory or git repository with Zoekt',
+    desc = 'Index the current directory or git repository with Zoekt',
   })
 
   -- ZoektSearch command

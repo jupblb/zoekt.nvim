@@ -7,8 +7,6 @@ editor workflow.
 
 - **Fast code search**: Leverage Zoekt's powerful indexing and search
   capabilities within Neovim
-- **Automatic indexing**: Smart detection of git repositories vs regular
-  directories
 - **Git hook integration**: Install post-commit hooks to automatically keep your
   index up-to-date
 - **Quickfix integration**: Search results displayed in Neovim's quickfix list
@@ -39,9 +37,7 @@ editor workflow.
   },
   config = function()
     require("zoekt").setup({
-      -- Configuration options (all optional)
-      -- index_path defaults to: ZOEKT_INDEX_PATH env, git root, or ~/.zoekt
-      use_telescope = true, -- Enable telescope integration (default: true)
+      -- All config options are optional
     })
   end,
 }
@@ -92,21 +88,19 @@ manage multiple indexes.
 
 ### Commands
 
-#### `:ZoektIndex [path]`
+#### `:ZoektIndex`
 
 Build or update the Zoekt index for the current project.
 
 - In a git repository: Uses `zoekt-git-index` and indexes from the repository
   root
 - Outside git: Uses `zoekt-index` and indexes the current working directory
-- Optional `path` argument: Specify custom index location (defaults to
-  configured `index_path`)
+- Uses the configured `index_path` for storing the index
 
-Examples:
+Example:
 
 ``` vim
-:ZoektIndex                    " Index to default location
-:ZoektIndex ~/my-indices/work  " Index to custom location
+:ZoektIndex " Index current directory/repository
 ```
 
 #### `:ZoektSearch [query]`
@@ -119,7 +113,7 @@ Search the indexed codebase using Zoekt query syntax.
 Examples:
 
 ``` vim
-:ZoektSearch                           " Open live search (telescope) or show usage (quickfix)
+:ZoektSearch " Open live search (telescope) or show usage (quickfix)
 ```
 
 #### `:ZoektTelescope`
@@ -133,7 +127,7 @@ Live search mode with telescope (telescope.nvim required).
 Example:
 
 ``` vim
-:ZoektTelescope                        " Start live search
+:ZoektTelescope " Start live search
 ```
 
 #### `:ZoektHook`
@@ -149,7 +143,7 @@ each commit.
 Example:
 
 ``` vim
-:ZoektHook                             " Install post-commit hook
+:ZoektHook " Install post-commit hook
 ```
 
 **Recommendation**: When working in a git repository, it's recommended to
