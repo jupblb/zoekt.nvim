@@ -79,21 +79,6 @@ local function create_zoekt_previewer(opts)
                 -1
               )
 
-              -- Also add a sign to make it more visible
-              vim.fn.sign_define('ZoektMatch', {
-                text = '▶',
-                texthl = 'TelescopePreviewMatch',
-                linehl = 'TelescopePreviewLine',
-              })
-
-              vim.fn.sign_place(
-                0,
-                'ZoektMatches',
-                'ZoektMatch',
-                bufnr,
-                { lnum = lnum, priority = 100 }
-              )
-
               -- Try to center the view on the matched line
               pcall(function()
                 vim.api.nvim_win_set_cursor(self.state.winid, { lnum, 0 })
