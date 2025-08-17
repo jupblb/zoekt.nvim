@@ -29,25 +29,47 @@ local function make_entry(result)
   })
 
   local display = function(entry)
-    return displayer({
-      { entry.filename, 'TelescopeResultsIdentifier' },
-      { tostring(entry.lnum), 'TelescopeResultsNumber' },
-      { entry.text, 'TelescopeResultsComment' },
-    })
+    -- For file searches, show just the filename
+    if entry.is_file_search then
+      return displayer({
+        { entry.filename, 'TelescopeResultsIdentifier' },
+        { '', 'TelescopeResultsNumber' },
+        { '', 'TelescopeResultsComment' },
+      })
+    else
+      return displayer({
+        { entry.filename, 'TelescopeResultsIdentifier' },
+        { tostring(entry.lnum), 'TelescopeResultsNumber' },
+        { entry.text, 'TelescopeResultsComment' },
+      })
+    end
   end
 
-  -- Use original line for ordinal if available to ensure uniqueness
-  local ordinal = result._original_line
-    or (result.filename .. ':' .. tostring(result.lnum) .. ':' .. result.text)
+  -- Make ordinal unique by including index for file searches
+  local ordinal = string.format(
+    '%s:%d:%s:%d',
+    result.filename,
+    result.lnum or 0,
+    result.text or '',
+    result._idx or 0
+  )
+
+  -- For file searches, use index as line number to prevent telescope deduplication
+  local display_lnum = result.lnum
+  if result.is_file_search and result._idx then
+    display_lnum = result._idx
+  end
 
   return {
     value = result,
     filename = result.filename,
-    lnum = result.lnum,
-    col = result.col,
+    lnum = display_lnum or 1,
+    col = result.col or 1,
     text = result.text,
     display = display,
     ordinal = ordinal,
+    is_file_search = result.is_file_search,
+    actual_lnum = result.lnum, -- Store actual line number for navigation
   }
 end
 
@@ -56,9 +78,6 @@ local function zoekt_search(opts)
   opts = opts or {}
   local index_path = zoekt_config.get_option('index_path')
   index_path = vim.fn.expand(index_path)
-
-  -- Counter for file results to ensure uniqueness
-  local file_result_counter = 0
 
   -- Check if index path exists
   if not vim.fn.isdirectory(index_path) then
@@ -72,73 +91,66 @@ local function zoekt_search(opts)
   pickers
     .new(opts, {
       prompt_title = 'Zoekt Search',
-      finder = finders.new_async_job({
-        command_generator = function(prompt)
+      finder = finders.new_dynamic({
+        fn = function(prompt)
           if not prompt or prompt == '' then
-            return nil
+            return {}
           end
 
-          return {
-            'zoekt',
-            '-index_dir',
-            index_path,
-            prompt,
-          }
+          local cmd = string.format(
+            'zoekt -index_dir %s %s',
+            vim.fn.shellescape(index_path),
+            vim.fn.shellescape(prompt)
+          )
+
+          local results = vim.fn.systemlist(cmd)
+          local entries = {}
+          local entry_idx = 0
+
+          for _, line in ipairs(results) do
+            if line and line ~= '' then
+              -- Parse zoekt output format: filename:line:text
+              local colon1 = line:find(':')
+              if colon1 then
+                local filename = line:sub(1, colon1 - 1)
+                local rest = line:sub(colon1 + 1)
+
+                local colon2 = rest:find(':')
+                if colon2 then
+                  local lnum_str = rest:sub(1, colon2 - 1)
+                  local lnum = tonumber(lnum_str)
+                  if lnum ~= nil then
+                    local text = rest:sub(colon2 + 1)
+
+                    -- For file searches (lnum == 0), mark as file search
+                    local is_file_search = (lnum == 0)
+
+                    -- Try to determine column by finding first non-whitespace
+                    local col = 1
+                    if text and text ~= '' and not is_file_search then
+                      local _, col_end = string.find(text, '^%s*')
+                      col = (col_end or 0) + 1
+                    end
+
+                    -- Create result with unique index
+                    entry_idx = entry_idx + 1
+                    table.insert(entries, {
+                      filename = filename,
+                      lnum = lnum,
+                      col = col,
+                      text = text or '',
+                      is_file_search = is_file_search,
+                      _idx = entry_idx, -- Unique index to prevent deduplication
+                    })
+                  end
+                end
+              end
+            end
+          end
+
+          return entries
         end,
-        entry_maker = function(line)
-          -- Skip empty lines
-          if not line or line == '' then
-            return nil
-          end
-
-          -- Parse zoekt output format: filename:line:text
-          local colon1 = line:find(':')
-          if not colon1 then
-            return nil
-          end
-
-          local filename = line:sub(1, colon1 - 1)
-          local rest = line:sub(colon1 + 1)
-
-          local colon2 = rest:find(':')
-          if not colon2 then
-            return nil
-          end
-
-          local lnum_str = rest:sub(1, colon2 - 1)
-          local lnum = tonumber(lnum_str)
-          if lnum == nil then
-            return nil
-          end
-
-          local text = rest:sub(colon2 + 1)
-
-          -- For file searches (lnum == 0), use a unique counter
-          if lnum == 0 then
-            -- Use a unique counter to prevent telescope from deduplicating
-            file_result_counter = file_result_counter + 1
-            lnum = file_result_counter
-            -- text already contains the filename from zoekt
-          end
-
-          -- Try to determine column by finding first non-whitespace
-          local col = 1
-          if text and text ~= '' and lnum > 1 then
-            local _, col_end = string.find(text, '^%s*')
-            col = (col_end or 0) + 1
-          end
-
-          -- Create result with the original line as part of ordinal for uniqueness
-          local result = {
-            filename = filename,
-            lnum = lnum,
-            col = col,
-            text = text or '',
-            _original_line = line, -- Store original line for unique ordinal
-          }
-
-          return make_entry(result)
-        end,
+        entry_maker = make_entry,
       }),
       sorter = conf.generic_sorter(opts),
       previewer = conf.file_previewer(opts),
@@ -149,10 +161,12 @@ local function zoekt_search(opts)
           if selection then
             -- Open the file at the specified location
             vim.cmd('edit ' .. selection.filename)
-            vim.api.nvim_win_set_cursor(
-              0,
-              { selection.lnum, selection.col - 1 }
-            )
+            -- For file searches, go to line 1, otherwise use the actual line number
+            local target_line = 1
+            if selection.actual_lnum and selection.actual_lnum > 0 then
+              target_line = selection.actual_lnum
+            end
+            vim.api.nvim_win_set_cursor(0, { target_line, selection.col - 1 })
           end
         end)
 

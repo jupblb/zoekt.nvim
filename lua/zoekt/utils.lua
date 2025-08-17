@@ -55,7 +55,7 @@ function M.parse_zoekt_output(output)
         lnum = tonumber(lnum),
         col = tonumber(col) or 1,
         text = text or '',
-        type = '',  -- Empty string for better compatibility (nvim-pqf expects string)
+        type = '', -- Empty string for better compatibility (nvim-pqf expects string)
       })
     end
   end
