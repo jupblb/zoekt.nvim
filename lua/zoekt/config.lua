@@ -6,7 +6,7 @@ local defaults = {
   auto_open_quickfix = true, -- Automatically open quickfix window after search
   use_telescope = false, -- Use telescope.nvim for search results (if available)
   telescope = {
-    live_search = false, -- Enable live search mode in telescope
+    live_search = true, -- Enable live search mode in telescope (default: true)
   },
   -- Future options:
   -- auto_index = false,

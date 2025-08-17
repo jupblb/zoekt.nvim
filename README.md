@@ -42,7 +42,7 @@ editor workflow.
       index_path = vim.env.ZOEKT_INDEX_PATH or "~/.zoekt",
       use_telescope = false, -- Enable telescope integration
       telescope = {
-        live_search = false, -- Enable live search mode
+        live_search = true, -- Enable live search mode (default: true)
       },
     })
   end,
@@ -82,7 +82,7 @@ require("zoekt").setup({
   -- Telescope-specific options
   telescope = {
     -- Enable live search mode (search as you type)
-    live_search = false,
+    live_search = true,  -- default: true
   },
 })
 ```
