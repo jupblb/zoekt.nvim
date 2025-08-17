@@ -18,24 +18,20 @@ describe('zoekt.nvim telescope integration', function()
   end)
 
   describe('telescope configuration', function()
-    it('should default to not using telescope', function()
+    it('should default to using telescope', function()
       local config = require('zoekt.config')
       config.setup()
 
-      assert.equals(false, config.get_option('use_telescope'))
+      assert.equals(true, config.get_option('use_telescope'))
     end)
 
-    it('should allow enabling telescope', function()
+    it('should allow disabling telescope', function()
       local config = require('zoekt.config')
       config.setup({
-        use_telescope = true,
-        telescope = {
-          live_search = true,
-        },
+        use_telescope = false,
       })
 
-      assert.equals(true, config.get_option('use_telescope'))
-      assert.equals(true, config.get_option('telescope').live_search)
+      assert.equals(false, config.get_option('use_telescope'))
     end)
   end)
 

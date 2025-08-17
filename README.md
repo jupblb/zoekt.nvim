@@ -40,7 +40,7 @@ editor workflow.
     require("zoekt").setup({
       -- Configuration options
       index_path = vim.env.ZOEKT_INDEX_PATH or "~/.zoekt",
-      use_telescope = false, -- Enable telescope integration
+      use_telescope = true, -- Enable telescope integration (default: true)
       telescope = {
         live_search = true, -- Enable live search mode (default: true)
       },
@@ -77,7 +77,7 @@ require("zoekt").setup({
   auto_open_quickfix = true,
 
   -- Use telescope.nvim for search results (if available)
-  use_telescope = false,
+  use_telescope = true,  -- default: true, falls back to quickfix if telescope not installed
 
   -- Telescope-specific options
   telescope = {
@@ -112,9 +112,9 @@ Examples:
 
 Search the indexed codebase using Zoekt query syntax.
 
-- When `use_telescope` is `false`: Results are populated in the quickfix list
-- When `use_telescope` is `true`: Opens telescope picker with search results
-- Without arguments and telescope enabled: Opens prompt for query input
+- When telescope is available (default): Opens telescope picker with live search
+- When telescope is not available: Results are populated in the quickfix list
+- Without arguments and telescope enabled: Opens live search prompt
 
 Examples:
 
