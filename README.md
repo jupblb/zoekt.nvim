@@ -3,6 +3,8 @@
 A Neovim plugin for integrating [Zoekt] code search engine directly into your
 editor workflow.
 
+<https://github.com/user-attachments/assets/5d2f3a21-adbe-479d-8b9a-bc0f0e7be81f>
+
 ## Features
 
 - **Fast code search**: Leverage Zoekt's powerful indexing and search
