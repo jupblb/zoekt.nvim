@@ -12,8 +12,7 @@ editor workflow.
 - **Quickfix integration**: Search results displayed in Neovim's quickfix list
   for easy navigation
 - **Telescope integration**: Optional integration with telescope.nvim for
-  interactive search and result navigation
-- **Live search**: Real-time search results as you type (with telescope)
+  interactive live search with real-time results as you type
 - **Configurable**: Flexible index path configuration with environment variable
   support
 
@@ -41,9 +40,6 @@ editor workflow.
       -- Configuration options
       index_path = vim.env.ZOEKT_INDEX_PATH or "~/.zoekt",
       use_telescope = true, -- Enable telescope integration (default: true)
-      telescope = {
-        live_search = true, -- Enable live search mode (default: true)
-      },
     })
   end,
 }
@@ -78,12 +74,6 @@ require("zoekt").setup({
 
   -- Use telescope.nvim for search results (if available)
   use_telescope = true,  -- default: true, falls back to quickfix if telescope not installed
-
-  -- Telescope-specific options
-  telescope = {
-    -- Enable live search mode (search as you type)
-    live_search = true,  -- default: true
-  },
 })
 ```
 
@@ -114,35 +104,14 @@ Search the indexed codebase using Zoekt query syntax.
 
 - When telescope is available (default): Opens telescope picker with live search
 - When telescope is not available: Results are populated in the quickfix list
-- Without arguments and telescope enabled: Opens live search prompt
 
 Examples:
 
 ``` vim
-:ZoektSearch function handleRequest   " Search for a function
-:ZoektSearch TODO                      " Search for TODOs
-:ZoektSearch "exact phrase"            " Search for exact phrase
-:ZoektSearch file:\.lua$ setup         " Search only in Lua files
-:ZoektSearch                           " Open prompt (telescope only)
+:ZoektSearch                           " Open live search (telescope) or show usage (quickfix)
 ```
 
-#### `:ZoektTelescope [query]`
-
-Search using telescope picker (telescope.nvim required).
-
-- Opens telescope picker with search results
-- Without arguments: Opens prompt for query input
-- Press `<Enter>` to jump to result
-- Press `<C-q>` to send results to quickfix
-
-Examples:
-
-``` vim
-:ZoektTelescope function setup         " Search with telescope
-:ZoektTelescope                        " Open telescope prompt
-```
-
-#### `:ZoektLive`
+#### `:ZoektTelescope`
 
 Live search mode with telescope (telescope.nvim required).
 
@@ -153,7 +122,7 @@ Live search mode with telescope (telescope.nvim required).
 Example:
 
 ``` vim
-:ZoektLive                             " Start live search
+:ZoektTelescope                        " Start live search
 ```
 
 ### Zoekt Query Syntax

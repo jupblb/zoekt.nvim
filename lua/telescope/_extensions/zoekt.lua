@@ -47,8 +47,8 @@ local function make_entry(result)
   }
 end
 
--- Live search with zoekt
-local function live_zoekt_search(opts)
+-- Main zoekt search function (live search)
+local function zoekt_search(opts)
   opts = opts or {}
   local index_path = zoekt_config.get_option('index_path')
   index_path = vim.fn.expand(index_path)
@@ -142,103 +142,12 @@ local function live_zoekt_search(opts)
     :find()
 end
 
--- Static search (single query)
-local function zoekt_search(opts)
-  opts = opts or {}
-  local query = opts.query or vim.fn.input('Zoekt Search: ')
-
-  if not query or query == '' then
-    zoekt_utils.notify('Search query cannot be empty', vim.log.levels.ERROR)
-    return
-  end
-
-  local index_path = zoekt_config.get_option('index_path')
-  index_path = vim.fn.expand(index_path)
-
-  -- Check if index path exists
-  if not vim.fn.isdirectory(index_path) then
-    zoekt_utils.notify(
-      'Index path does not exist: ' .. index_path .. '\nRun :ZoektIndex first',
-      vim.log.levels.ERROR
-    )
-    return
-  end
-
-  local cmd = 'zoekt'
-  local args = { '-index_dir', index_path, query }
-
-  -- Execute search and display in telescope
-  zoekt_utils.execute_async(cmd, args, function(exit_code, stdout, stderr)
-    if exit_code == 0 then
-      if #stdout == 0 then
-        zoekt_utils.notify('No results found', vim.log.levels.INFO)
-        return
-      end
-
-      -- Parse results
-      local results = zoekt_utils.parse_zoekt_output(stdout)
-
-      -- Display in telescope
-      vim.schedule(function()
-        pickers
-          .new(opts, {
-            prompt_title = 'Zoekt Results: ' .. query,
-            finder = finders.new_table({
-              results = results,
-              entry_maker = make_entry,
-            }),
-            sorter = conf.generic_sorter(opts),
-            previewer = conf.file_previewer(opts),
-            attach_mappings = function(prompt_bufnr, map)
-              actions.select_default:replace(function()
-                actions.close(prompt_bufnr)
-                local selection = action_state.get_selected_entry()
-                if selection then
-                  -- Open the file at the specified location
-                  vim.cmd('edit ' .. selection.filename)
-                  vim.api.nvim_win_set_cursor(
-                    0,
-                    { selection.lnum, selection.col - 1 }
-                  )
-                end
-              end)
-
-              -- Add quickfix list population on <C-q>
-              map('i', '<C-q>', function()
-                local picker = action_state.get_current_picker(prompt_bufnr)
-                local multi_selections = picker:get_multi_selection()
-
-                if #multi_selections > 0 then
-                  actions.send_selected_to_qflist(prompt_bufnr)
-                else
-                  actions.send_to_qflist(prompt_bufnr)
-                end
-                actions.open_qflist(prompt_bufnr)
-              end)
-
-              return true
-            end,
-          })
-          :find()
-      end)
-    else
-      local error_msg = 'Search failed'
-      if #stderr > 0 then
-        error_msg = error_msg .. ': ' .. table.concat(stderr, '\n')
-      end
-      zoekt_utils.notify(error_msg, vim.log.levels.ERROR)
-    end
-  end)
-end
-
 -- Main extension setup
 return telescope.register_extension({
   setup = function(ext_config, config)
     -- Extension config can be used here
   end,
   exports = {
-    zoekt = zoekt_search,
-    live_search = live_zoekt_search,
-    search = zoekt_search,
+    zoekt = zoekt_search, -- Main entry point for live search
   },
 })

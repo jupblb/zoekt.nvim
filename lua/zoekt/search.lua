@@ -117,8 +117,6 @@ end
 function M.handle_search_command(args)
   -- Check if we should use telescope
   local use_telescope = config.get_option('use_telescope')
-  local live_search = config.get_option('telescope')
-    and config.get_option('telescope').live_search
 
   -- If telescope is requested but not available, fallback to quickfix
   if use_telescope and not has_telescope then
@@ -130,24 +128,8 @@ function M.handle_search_command(args)
   end
 
   if use_telescope then
-    -- Use telescope for search
-    if live_search then
-      -- Live search mode - interactive search as you type
-      require('telescope').extensions.zoekt.live_search()
-    else
-      -- Static search mode - search with provided query
-      if not args or args == '' then
-        -- If no args, telescope will prompt for input
-        require('telescope').extensions.zoekt.search()
-      else
-        local query = utils.parse_search_args(args)
-        if query and query ~= '' then
-          require('telescope').extensions.zoekt.search({ query = query })
-        else
-          utils.notify('Search query cannot be empty', vim.log.levels.ERROR)
-        end
-      end
-    end
+    -- Use telescope for live search (always live search now)
+    require('telescope').extensions.zoekt.zoekt()
   else
     -- Use traditional quickfix
     if not args or args == '' then

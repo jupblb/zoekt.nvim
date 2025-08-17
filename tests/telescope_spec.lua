@@ -148,8 +148,6 @@ describe('zoekt.nvim telescope integration', function()
           extension_registered = true
           assert.is_not_nil(ext.exports)
           assert.is_function(ext.exports.zoekt)
-          assert.is_function(ext.exports.live_search)
-          assert.is_function(ext.exports.search)
           return true
         end,
         load_extension = function(name)
@@ -159,8 +157,7 @@ describe('zoekt.nvim telescope integration', function()
         end,
         extensions = {
           zoekt = {
-            search = function() end,
-            live_search = function() end,
+            zoekt = function() end,
           },
         },
       }
@@ -185,8 +182,7 @@ describe('zoekt.nvim telescope integration', function()
           load_extension = function() end,
           extensions = {
             zoekt = {
-              search = function() end,
-              live_search = function() end,
+              zoekt = function() end,
             },
           },
         }
@@ -198,16 +194,11 @@ describe('zoekt.nvim telescope integration', function()
         -- Check if commands exist
         local commands = vim.api.nvim_get_commands({})
         assert.is_not_nil(commands.ZoektTelescope)
-        assert.is_not_nil(commands.ZoektLive)
 
-        -- Verify command descriptions
-        assert.equals(
-          'Search with Zoekt using Telescope',
-          commands.ZoektTelescope.definition
-        )
+        -- Verify command description
         assert.equals(
           'Live search with Zoekt using Telescope',
-          commands.ZoektLive.definition
+          commands.ZoektTelescope.definition
         )
       end
     )
