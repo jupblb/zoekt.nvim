@@ -156,12 +156,21 @@ local function zoekt_search(opts)
         local base_sorter = conf.generic_sorter(opts)
         local original_score = base_sorter.score
 
-        -- Wrap the sorter to handle file searches
+        -- Wrap the sorter to handle zoekt query syntax
         base_sorter.score = function(self, prompt, entry, cb_add, cb_filter)
-          -- For file searches (when zoekt returns line number 0),
-          -- pass empty prompt to sorter to show all results unfiltered
+          -- Check if prompt contains zoekt query syntax (f:, c:, etc.)
+          local has_zoekt_syntax = prompt
+            and (
+              prompt:match('[fcrb]:') -- file, content, regex, both
+              or prompt:match('-') -- exclusions
+              or prompt:match('sym:') -- symbols
+              or prompt:match('case:') -- case sensitivity
+              or prompt:match('lang:') -- language filter
+            )
+
+          -- If using zoekt syntax or file search, pass empty prompt to sorter
           local sorter_prompt = prompt
-          if entry and entry.is_file_search then
+          if has_zoekt_syntax or (entry and entry.is_file_search) then
             sorter_prompt = ''
           end
 
