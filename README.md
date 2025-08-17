@@ -82,6 +82,12 @@ require("zoekt").setup({
 })
 ```
 
+**Recommendation**: For better search isolation, consider using separate index
+paths for each repository. This prevents search results from mixing across
+different projects and eliminates the need for `repo:` filters in your queries.
+You can set a custom `index_path` per project or use environment variables to
+manage multiple indexes.
+
 ## Usage
 
 ### Commands

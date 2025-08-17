@@ -166,6 +166,13 @@ You can configure different index paths for different projects: >lua
   :ZoektSearch handleAuth
 <
 
+Recommendation: Use separate index paths for each repository to prevent
+search results from mixing across different projects. This eliminates the
+need for `repo:` filters in your queries. You can achieve this by:
+- Setting a custom `index_path` in your project-specific config
+- Using environment variables (e.g., `ZOEKT_INDEX_PATH`)
+- Creating a `.nvim.lua` file in each project with custom settings
+
 Environment Variables ~
 
 Set `ZOEKT_INDEX_PATH` to override the default index location: >bash
