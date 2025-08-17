@@ -1,0 +1,181 @@
+*zoekt.txt*  Neovim plugin for Zoekt code search engine
+
+==============================================================================
+CONTENTS                                                      *zoekt-contents*
+
+  1. Introduction .......................... |zoekt-introduction|
+  2. Requirements .......................... |zoekt-requirements|
+  3. Installation .......................... |zoekt-installation|
+  4. Configuration ......................... |zoekt-configuration|
+  5. Commands .............................. |zoekt-commands|
+  6. Usage ................................. |zoekt-usage|
+  7. Troubleshooting ....................... |zoekt-troubleshooting|
+
+==============================================================================
+INTRODUCTION                                              *zoekt-introduction*
+
+zoekt.nvim is a Neovim plugin that integrates the Zoekt code search engine,
+providing fast and efficient code searching capabilities within your editor.
+
+Features:
+- Index git repositories and directories
+- Fast code search across indexed codebases
+- Quickfix list integration for search results
+- Support for custom index paths
+
+==============================================================================
+REQUIREMENTS                                              *zoekt-requirements*
+
+- Neovim >= 0.8.0
+- Zoekt binaries installed and in PATH:
+  - `zoekt` (for searching)
+  - `zoekt-index` (for indexing directories)
+  - `zoekt-git-index` (for indexing git repositories)
+
+To install Zoekt, visit: https://github.com/sourcegraph/zoekt
+
+==============================================================================
+INSTALLATION                                              *zoekt-installation*
+
+Using lazy.nvim: >lua
+  {
+    "username/zoekt.nvim",
+    config = function()
+      require("zoekt").setup({
+        -- your configuration
+      })
+    end,
+  }
+<
+
+Using packer.nvim: >lua
+  use {
+    "username/zoekt.nvim",
+    config = function()
+      require("zoekt").setup({
+        -- your configuration
+      })
+    end,
+  }
+<
+
+==============================================================================
+CONFIGURATION                                            *zoekt-configuration*
+
+Call the setup function with your configuration: >lua
+  require("zoekt").setup({
+    index_path = "~/.zoekt",  -- Default index location
+  })
+<
+
+Options:
+
+index_path                                              *zoekt-config-index_path*
+    Type: `string`
+    Default: `"~/.zoekt"` or value of `ZOEKT_INDEX_PATH` environment variable
+
+    The directory where Zoekt stores its search indices.
+
+==============================================================================
+COMMANDS                                                      *zoekt-commands*
+
+:ZoektIndex [path]                                                *:ZoektIndex*
+    Index a directory or git repository for searching.
+
+    If [path] is provided, indexes the specified directory.
+    If no path is provided, indexes the current working directory.
+
+    For git repositories, uses `zoekt-git-index` for optimal indexing.
+    For regular directories, uses `zoekt-index`.
+
+    Examples: >
+      :ZoektIndex
+      :ZoektIndex ~/projects/myproject
+<
+
+:ZoektSearch {query}                                            *:ZoektSearch*
+    Search for code in the indexed codebase.
+
+    Arguments:
+    - {query}: Required. The search query.
+
+    Search results are populated in the quickfix list.
+    Uses the index path configured in setup().
+
+    Examples: >
+      :ZoektSearch function handleRequest
+      :ZoektSearch TODO
+      :ZoektSearch "exact phrase match"
+<
+
+==============================================================================
+USAGE                                                            *zoekt-usage*
+
+Basic Workflow ~
+
+1. Index your project: >
+   :ZoektIndex
+<
+
+2. Search for code: >
+   :ZoektSearch function myFunction
+<
+
+3. Navigate results using quickfix commands:
+   - `:cnext` - Go to next result
+   - `:cprev` - Go to previous result
+   - `:copen` - Open quickfix window
+   - `:cclose` - Close quickfix window
+
+Custom Index Paths ~
+
+You can configure different index paths for different projects: >lua
+  -- Set a custom index path in your setup
+  require("zoekt").setup({
+    index_path = "~/projects/.zoekt"
+  })
+
+  -- Index a specific project
+  :ZoektIndex ~/projects/backend
+
+  -- Search uses the configured index path
+  :ZoektSearch handleAuth
+<
+
+Environment Variables ~
+
+Set `ZOEKT_INDEX_PATH` to override the default index location: >bash
+  export ZOEKT_INDEX_PATH=/custom/zoekt/path
+<
+
+==============================================================================
+TROUBLESHOOTING                                        *zoekt-troubleshooting*
+
+Zoekt binaries not found ~
+
+If you get an error about missing Zoekt binaries, ensure they are installed
+and in your PATH: >bash
+  which zoekt
+  which zoekt-index
+  which zoekt-git-index
+<
+
+Index path does not exist ~
+
+The plugin will attempt to create the index directory if it doesn't exist.
+If you get permission errors, ensure you have write access to the path.
+
+No search results ~
+
+1. Ensure the codebase has been indexed: >
+   :ZoektIndex
+<
+
+2. Check that the index path contains index files: >bash
+   ls ~/.zoekt
+<
+
+3. Try a broader search query to test if indexing worked.
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:

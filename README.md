@@ -16,7 +16,7 @@ editor workflow.
 
 ## Requirements
 
-- Neovim \>= 0.8.0
+- Neovim \>= 0.11.2
 - [Zoekt] installed (`zoekt-index`, `zoekt-git-index`, and `zoekt` binaries in
   PATH)
 - [plenary.nvim] (optional, for enhanced functionality)
@@ -101,8 +101,8 @@ Search the indexed codebase using Zoekt query syntax.
 Examples:
 
 ``` vim
-:ZoektSearch function handleRequest   " Search in default index
-:ZoektSearch index=~/work TODO        " Search in custom index
+:ZoektSearch function handleRequest   " Search for a function
+:ZoektSearch TODO                      " Search for TODOs
 :ZoektSearch "exact phrase"            " Search for exact phrase
 :ZoektSearch file:\.lua$ setup         " Search only in Lua files
 ```
