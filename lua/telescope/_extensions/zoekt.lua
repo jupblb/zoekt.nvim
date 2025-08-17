@@ -57,6 +57,9 @@ local function zoekt_search(opts)
   local index_path = zoekt_config.get_option('index_path')
   index_path = vim.fn.expand(index_path)
 
+  -- Counter for file results to ensure uniqueness
+  local file_result_counter = 0
+
   -- Check if index path exists
   if not vim.fn.isdirectory(index_path) then
     zoekt_utils.notify(
@@ -110,9 +113,11 @@ local function zoekt_search(opts)
 
           local text = rest:sub(colon2 + 1)
 
-          -- For file searches (lnum == 0), adjust for display
+          -- For file searches (lnum == 0), use a unique counter
           if lnum == 0 then
-            lnum = 1 -- Set to 1 for proper navigation
+            -- Use a unique counter to prevent telescope from deduplicating
+            file_result_counter = file_result_counter + 1
+            lnum = file_result_counter
             -- text already contains the filename from zoekt
           end
 
@@ -132,10 +137,7 @@ local function zoekt_search(opts)
             _original_line = line, -- Store original line for unique ordinal
           }
 
-          local entry = make_entry(result)
-          -- Debug: Log each entry's ordinal to see if they're unique
-          vim.notify('Entry ordinal: ' .. entry.ordinal, vim.log.levels.INFO)
-          return entry
+          return make_entry(result)
         end,
       }),
       sorter = conf.generic_sorter(opts),
