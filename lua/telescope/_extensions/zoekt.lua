@@ -69,75 +69,72 @@ local function zoekt_search(opts)
   pickers
     .new(opts, {
       prompt_title = 'Zoekt Search',
-      finder = finders.new_job(function(prompt)
-        if not prompt or prompt == '' then
-          return nil
-        end
+      finder = finders.new_async_job({
+        command_generator = function(prompt)
+          if not prompt or prompt == '' then
+            return nil
+          end
 
-        local cmd = {
-          'zoekt',
-          '-index_dir',
-          index_path,
-          prompt,
-        }
-        -- Debug: Print the command being executed
-        -- vim.notify('Zoekt cmd: ' .. vim.inspect(cmd), vim.log.levels.INFO)
-        return cmd
-      end, function(line)
-        -- Skip empty lines
-        if not line or line == '' then
-          return nil
-        end
+          return {
+            'zoekt',
+            '-index_dir',
+            index_path,
+            prompt,
+          }
+        end,
+        entry_maker = function(line)
+          -- Skip empty lines
+          if not line or line == '' then
+            return nil
+          end
 
-        -- Debug output (enable to see what lines are being parsed)
-        -- vim.notify('Parsing line: ' .. line, vim.log.levels.INFO)
+          -- Parse zoekt output format: filename:line:text
+          local colon1 = line:find(':')
+          if not colon1 then
+            return nil
+          end
 
-        -- Parse zoekt output format: filename:line:text
-        local colon1 = line:find(':')
-        if not colon1 then
-          return nil
-        end
+          local filename = line:sub(1, colon1 - 1)
+          local rest = line:sub(colon1 + 1)
 
-        local filename = line:sub(1, colon1 - 1)
-        local rest = line:sub(colon1 + 1)
+          local colon2 = rest:find(':')
+          if not colon2 then
+            return nil
+          end
 
-        local colon2 = rest:find(':')
-        if not colon2 then
-          return nil
-        end
+          local lnum_str = rest:sub(1, colon2 - 1)
+          local lnum = tonumber(lnum_str)
+          if lnum == nil then
+            return nil
+          end
 
-        local lnum_str = rest:sub(1, colon2 - 1)
-        local lnum = tonumber(lnum_str)
-        if lnum == nil then
-          return nil
-        end
+          local text = rest:sub(colon2 + 1)
 
-        local text = rest:sub(colon2 + 1)
+          -- For file searches (lnum == 0), adjust for display
+          if lnum == 0 then
+            lnum = 1 -- Set to 1 for proper navigation
+            -- text already contains the filename from zoekt
+          end
 
-        -- For file searches (lnum == 0), adjust for display
-        if lnum == 0 then
-          lnum = 1 -- Set to 1 for proper navigation
-          -- text already contains the filename from zoekt
-        end
+          -- Try to determine column by finding first non-whitespace
+          local col = 1
+          if text and text ~= '' and lnum > 1 then
+            local _, col_end = string.find(text, '^%s*')
+            col = (col_end or 0) + 1
+          end
 
-        -- Try to determine column by finding first non-whitespace
-        local col = 1
-        if text and text ~= '' and lnum > 1 then
-          local _, col_end = string.find(text, '^%s*')
-          col = (col_end or 0) + 1
-        end
+          -- Create result with the original line as part of ordinal for uniqueness
+          local result = {
+            filename = filename,
+            lnum = lnum,
+            col = col,
+            text = text or '',
+            _original_line = line, -- Store original line for unique ordinal
+          }
 
-        -- Create result with the original line as part of ordinal for uniqueness
-        local result = {
-          filename = filename,
-          lnum = lnum,
-          col = col,
-          text = text or '',
-          _original_line = line, -- Store original line for unique ordinal
-        }
-
-        return make_entry(result)
-      end, opts.max_results, opts.cwd),
+          return make_entry(result)
+        end,
+      }),
       sorter = conf.generic_sorter(opts),
       previewer = conf.file_previewer(opts),
       attach_mappings = function(prompt_bufnr, map)
