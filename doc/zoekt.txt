@@ -27,7 +27,7 @@ Features:
 ==============================================================================
 REQUIREMENTS                                              *zoekt-requirements*
 
-- Neovim >= 0.8.0
+- Neovim >= 0.11.2
 - Zoekt binaries installed and in PATH:
   - `zoekt` (for searching)
   - `zoekt-index` (for indexing directories)
