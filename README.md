@@ -39,8 +39,8 @@ editor workflow.
   },
   config = function()
     require("zoekt").setup({
-      -- Configuration options
-      index_path = vim.env.ZOEKT_INDEX_PATH or "~/.zoekt",
+      -- Configuration options (all optional)
+      -- index_path defaults to: ZOEKT_INDEX_PATH env, git root, or ~/.zoekt
       use_telescope = true, -- Enable telescope integration (default: true)
     })
   end,
@@ -57,7 +57,7 @@ use {
   },
   config = function()
     require("zoekt").setup({
-      index_path = vim.env.ZOEKT_INDEX_PATH or "~/.zoekt",
+      -- All config options are optional
     })
   end,
 }
@@ -68,8 +68,11 @@ use {
 ``` lua
 require("zoekt").setup({
   -- Path where Zoekt indexes are stored
-  -- Can be overridden by ZOEKT_INDEX_PATH environment variable
-  index_path = "~/.zoekt",
+  -- Default priority:
+  -- 1. ZOEKT_INDEX_PATH environment variable (if set)
+  -- 2. Git project root + "/.zoekt" (if in git repo)
+  -- 3. "~/.zoekt" (fallback)
+  index_path = nil,  -- nil uses smart defaults
 
   -- Automatically open quickfix window after search
   auto_open_quickfix = true,
