@@ -99,7 +99,7 @@ local function make_entry(result)
   local displayer = entry_display.create({
     separator = ' ',
     items = {
-      { width = 40 }, -- filename
+      { remaining = true }, -- filename
       { width = 5 }, -- line number
       { remaining = true }, -- text
     },
